@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather words</title>
+<style>
+  :root{
+    --ink:#231C2E; --soft:#625B6E; --bg:#F4F2F8; --card:#FFFFFF;
+    --line:#DCD6E6; --viola:#5B3FA8; --viola-chiaro:#EBE4FA;
+    --verde:#22795C; --verde-chiaro:#E2F1EB; --rosso:#A8405A;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; font-size:17px; line-height:1.5}
+  .wrap{max-width:760px; margin:0 auto; padding:26px 20px 60px}
+  header{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
+  h1{font-size:26px; margin:0; letter-spacing:-.01em}
+  .fase{font-size:15px; color:var(--soft)}
+  .consegna{color:var(--soft); margin:6px 0 20px; max-width:58ch}
+  .griglia{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+  @media (max-width:620px){ .griglia{grid-template-columns:1fr; gap:12px} }
+  .colonna h2{font-size:14px; color:var(--soft); font-weight:600; margin:0 0 10px}
+  .lista{display:grid; gap:8px}
+  .voce{display:flex; align-items:center; gap:8px; width:100%; text-align:left; font:inherit; cursor:pointer;
+    border:1.5px solid var(--line); background:var(--card); border-radius:10px; padding:11px 13px; color:var(--ink)}
+  .voce:hover:not(:disabled){border-color:var(--viola)}
+  .voce.scelta{border-color:var(--viola); background:var(--viola-chiaro); color:var(--viola); font-weight:600}
+  .voce.presa{border-color:var(--verde); background:var(--verde-chiaro); color:var(--verde); cursor:default; opacity:.85}
+  .voce.errore{border-color:var(--rosso); background:#F7E6EB}
+  .voce:disabled{cursor:default}
+  .audio{margin-left:auto; border:none; background:none; cursor:pointer; font-size:17px; padding:2px 4px; border-radius:6px; color:var(--soft)}
+  .audio:hover{color:var(--viola)}
+  .stato{margin-top:20px; min-height:26px; font-size:16px; color:var(--soft)}
+  .stato.ok{color:var(--verde)}
+  .stato.no{color:var(--rosso)}
+  .scrittura{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px}
+  .prompt{font-size:15px; color:var(--soft); margin:0 0 6px}
+  .parola-it{font-size:28px; font-weight:700; margin:0 0 18px; letter-spacing:-.01em}
+  .riga{display:flex; gap:10px; flex-wrap:wrap}
+  input[type=text]{font:inherit; font-size:19px; padding:11px 14px; border-radius:10px;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink); min-width:220px; flex:1}
+  input[type=text]:focus{outline:3px solid var(--viola); outline-offset:1px; border-color:var(--viola)}
+  button.primario{font:inherit; cursor:pointer; background:var(--ink); color:#fff; border:1.5px solid var(--ink);
+    border-radius:10px; padding:11px 22px; font-weight:600}
+  button.primario:hover{background:#352B44}
+  .suggerisci{font:inherit; cursor:pointer; background:none; border:none; color:var(--soft); text-decoration:underline; padding:0; margin-top:14px; font-size:15px}
+  .suggerisci:hover{color:var(--viola)}
+  .traccia{margin-top:14px; font-size:19px; letter-spacing:.22em; font-weight:600; color:var(--viola); display:none}
+  .traccia.visibile{display:block}
+  .esito{margin-top:16px; font-size:16px; display:none}
+  .esito.visibile{display:block}
+  .esito.ok{color:var(--verde)}
+  .esito.no{color:var(--rosso)}
+  .avanzamento{font-size:14px; color:var(--soft); margin-top:18px}
+  .fine{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:30px; text-align:center}
+  .fine h2{margin:0 0 6px; font-size:22px}
+  .punti{font-size:40px; font-weight:700; color:var(--viola); margin:8px 0}
+  .fine p{color:var(--soft); margin:0 0 18px}
+  button:focus-visible{outline:3px solid var(--viola); outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Weather words</h1>
+    <div class="fase" id="fase"></div>
+  </header>
+  <p class="consegna" id="consegna"></p>
+
+  <section id="abbina">
+    <div class="griglia">
+      <div class="colonna">
+        <h2>English</h2>
+        <div class="lista" id="col-en"></div>
+      </div>
+      <div class="colonna">
+        <h2>Italiano</h2>
+        <div class="lista" id="col-it"></div>
+      </div>
+    </div>
+    <p class="stato" id="stato" role="status" aria-live="polite"></p>
+  </section>
+
+  <section id="scrivi" hidden>
+    <div class="scrittura">
+      <p class="prompt">Come si dice in inglese?</p>
+      <p class="parola-it" id="parola-it"></p>
+      <div class="riga">
+        <input type="text" id="risposta" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Scrivi la parola in inglese">
+        <button class="primario" id="invia">Controlla</button>
+      </div>
+      <button class="suggerisci" id="suggerisci">Mostra la prima lettera</button>
+      <p class="traccia" id="traccia"></p>
+      <p class="esito" id="esito" role="status" aria-live="polite"></p>
+      <p class="avanzamento" id="avanzamento"></p>
+    </div>
+  </section>
+
+  <section class="fine" id="fine" hidden>
+    <h2>Well done</h2>
+    <div class="punti" id="punti"></div>
+    <p id="commento"></p>
+    <button class="primario" id="ricomincia">Ricomincia</button>
+  </section>
+</div>
+
+<script>
+const PAROLE = [
+  {en:"fog",      it:"nebbia"},
+  {en:"hail",     it:"grandine"},
+  {en:"lightning",it:"fulmine"},
+  {en:"puddle",   it:"pozzanghera"},
+  {en:"rainbow",  it:"arcobaleno"},
+  {en:"shower",   it:"acquazzone"},
+  {en:"thunder",  it:"tuono"},
+  {en:"breeze",   it:"brezza"}
+];
+const DA_SCRIVERE = 5;
+
+const $ = id => document.getElementById(id);
+let sceltaEn = null, sceltaIt = null, abbinate = 0, erroriAbbina = 0;
+let codaScrittura = [], indice = 0, puntiScrittura = 0, aiutoUsato = false;
+
+function mischia(a){ return a.map(x => [Math.random(), x]).sort((p,q) => p[0]-q[0]).map(p => p[1]); }
+
+function pronuncia(parola){
+  if(!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(parola);
+  u.lang = "en-GB";
+  u.rate = 0.9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function creaVoce(testo, chiave, lingua){
+  const b = document.createElement("button");
+  b.className = "voce";
+  b.dataset.chiave = chiave;
+  const t = document.createElement("span");
+  t.textContent = testo;
+  b.appendChild(t);
+  if(lingua === "en" && "speechSynthesis" in window){
+    const a = document.createElement("span");
+    a.className = "audio";
+    a.textContent = "♪";
+    a.title = "Ascolta";
+    a.setAttribute("role","button");
+    a.onclick = e => { e.stopPropagation(); pronuncia(testo); };
+    b.appendChild(a);
+  }
+  b.onclick = () => seleziona(b, lingua);
+  return b;
+}
+
+function montaAbbina(){
+  $("fase").textContent = "Prima parte · abbina";
+  $("consegna").textContent = "Tocca una parola inglese e poi il suo significato. Il simbolo ♪ fa sentire la pronuncia.";
+  const en = mischia(PAROLE), it = mischia(PAROLE);
+  const ce = $("col-en"), ci = $("col-it");
+  ce.innerHTML = ""; ci.innerHTML = "";
+  en.forEach(p => ce.appendChild(creaVoce(p.en, p.en, "en")));
+  it.forEach(p => ci.appendChild(creaVoce(p.it, p.en, "it")));
+}
+
+function seleziona(bottone, lingua){
+  if(bottone.classList.contains("presa")) return;
+  if(lingua === "en"){
+    if(sceltaEn) sceltaEn.classList.remove("scelta");
+    sceltaEn = bottone;
+  } else {
+    if(sceltaIt) sceltaIt.classList.remove("scelta");
+    sceltaIt = bottone;
+  }
+  bottone.classList.add("scelta");
+  if(lingua === "en") pronuncia(bottone.firstChild.textContent);
+  if(sceltaEn && sceltaIt) verifica();
+}
+
+function verifica(){
+  const a = sceltaEn, b = sceltaIt;
+  const giusto = a.dataset.chiave === b.dataset.chiave;
+  const stato = $("stato");
+  if(giusto){
+    [a,b].forEach(x => { x.classList.remove("scelta"); x.classList.add("presa"); x.disabled = true; });
+    abbinate++;
+    stato.textContent = "Giusto. Ne restano " + (PAROLE.length - abbinate) + ".";
+    stato.className = "stato ok";
+    sceltaEn = sceltaIt = null;
+    if(abbinate === PAROLE.length) setTimeout(passaAScrivere, 900);
+  } else {
+    erroriAbbina++;
+    [a,b].forEach(x => x.classList.add("errore"));
+    stato.textContent = "Non è questa coppia. Riprova.";
+    stato.className = "stato no";
+    const x = a, y = b;
+    sceltaEn = sceltaIt = null;
+    setTimeout(() => {
+      [x,y].forEach(e => e.classList.remove("errore","scelta"));
+    }, 700);
+  }
+}
+
+function passaAScrivere(){
+  $("abbina").hidden = true;
+  $("scrivi").hidden = false;
+  codaScrittura = mischia(PAROLE).slice(0, DA_SCRIVERE);
+  indice = 0;
+  mostraParola();
+}
+
+function mostraParola(){
+  const p = codaScrittura[indice];
+  aiutoUsato = false;
+  $("fase").textContent = "Seconda parte · scrivi";
+  $("consegna").textContent = "Adesso scrivi tu la parola inglese. L'ortografia conta.";
+  $("parola-it").textContent = p.it;
+  $("risposta").value = "";
+  $("risposta").disabled = false;
+  $("invia").textContent = "Controlla";
+  $("esito").className = "esito";
+  $("traccia").className = "traccia";
+  $("avanzamento").textContent = "Parola " + (indice+1) + " di " + codaScrittura.length;
+  $("risposta").focus();
+}
+
+function controllaScritta(){
+  const p = codaScrittura[indice];
+  if($("risposta").disabled){ avanti(); return; }
+  const dato = $("risposta").value.trim().toLowerCase();
+  if(!dato) return;
+  const e = $("esito");
+  if(dato === p.en){
+    if(!aiutoUsato) puntiScrittura++;
+    e.textContent = aiutoUsato
+      ? "Giusto, con l'aiuto. Riprovala domani senza."
+      : "Giusto: " + p.en + ".";
+    e.className = "esito visibile ok";
+    pronuncia(p.en);
+  } else {
+    e.textContent = "Si scrive " + p.en + ". Guarda bene le lettere e riascolta la pronuncia.";
+    e.className = "esito visibile no";
+    pronuncia(p.en);
+  }
+  $("risposta").disabled = true;
+  $("invia").textContent = (indice === codaScrittura.length - 1) ? "Vedi il risultato" : "Prossima parola";
+}
+
+function avanti(){
+  indice++;
+  if(indice >= codaScrittura.length){ finisci(); return; }
+  mostraParola();
+}
+
+function finisci(){
+  $("scrivi").hidden = true;
+  $("fine").hidden = false;
+  $("fase").textContent = "";
+  $("consegna").textContent = "";
+  $("punti").textContent = puntiScrittura + " su " + codaScrittura.length;
+  $("commento").textContent = erroriAbbina === 0
+    ? "Abbinamenti tutti giusti al primo colpo. Le parole che hai sbagliato a scrivere riguardale: spesso cambia una lettera sola."
+    : "Riguarda le parole che ti hanno fatto esitare nell'abbinamento: sono quelle da ripassare per prime.";
+}
+
+$("invia").onclick = controllaScritta;
+$("risposta").addEventListener("keydown", e => { if(e.key === "Enter") controllaScritta(); });
+$("suggerisci").onclick = () => {
+  const p = codaScrittura[indice];
+  aiutoUsato = true;
+  $("traccia").textContent = p.en[0].toUpperCase() + " " + "_ ".repeat(p.en.length - 1).trim();
+  $("traccia").className = "traccia visibile";
+};
+$("ricomincia").onclick = () => {
+  sceltaEn = sceltaIt = null; abbinate = 0; erroriAbbina = 0;
+  puntiScrittura = 0; indice = 0;
+  $("fine").hidden = true; $("abbina").hidden = false;
+  $("stato").textContent = ""; $("stato").className = "stato";
+  montaAbbina();
+};
+
+montaAbbina();
+</script>
+</body>
+</html>
